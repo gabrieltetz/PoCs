@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subdomain Takeover PoC</title>
+  <style>
+    :root {
+      --bg: #020402;
+      --green: #00ff66;
+      --green-soft: rgba(0, 255, 102, 0.18);
+      --green-dim: rgba(0, 255, 102, 0.08);
+      --panel: rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #041106 0%, #010301 65%, #000 100%);
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+      color: var(--green);
+    }
+
+    canvas#matrix {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.18)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.02) 0px,
+          rgba(255,255,255,0.02) 1px,
+          transparent 2px,
+          transparent 4px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 32px 28px;
+      border: 1px solid rgba(0, 255, 102, 0.28);
+      background: var(--panel);
+      box-shadow:
+        0 0 18px rgba(0, 255, 102, 0.12),
+        inset 0 0 32px rgba(0, 255, 102, 0.04);
+      backdrop-filter: blur(2px);
+      max-width: 1000px;
+      width: min(100%, 1000px);
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 6px 10px;
+      border: 1px solid rgba(0, 255, 102, 0.22);
+      background: rgba(0, 255, 102, 0.05);
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #8cffbe;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 6vw, 74px);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
+      color: var(--green);
+      text-shadow:
+        0 0 8px rgba(0,255,102,0.95),
+        0 0 18px rgba(0,255,102,0.65),
+        0 0 38px rgba(0,255,102,0.28);
+      animation: flicker 3.2s infinite ease-in-out;
+    }
+
+    .subtitle {
+      margin: 18px auto 0;
+      max-width: 760px;
+      font-size: clamp(14px, 2vw, 18px);
+      line-height: 1.7;
+      color: #b9ffd4;
+      opacity: 0.92;
+    }
+
+    .meta {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .chip {
+      padding: 10px 14px;
+      border: 1px solid rgba(0, 255, 102, 0.22);
+      background: rgba(0, 255, 102, 0.05);
+      color: #d5ffe5;
+      font-size: 13px;
+    }
+
+    .footer-note {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      font-size: 12px;
+      color: rgba(180, 255, 210, 0.72);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0 18px;
+    }
+
+    .cursor::after {
+      content: '_';
+      display: inline-block;
+      margin-left: 6px;
+      animation: blink 1s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    @keyframes flicker {
+      0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        opacity: 1;
+      }
+      20%, 24%, 55% {
+        opacity: 0.84;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 24px 18px;
+      }
+
+      .meta {
+        gap: 8px;
+      }
+
+      .chip {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div class="overlay"></div>
+
+  <main class="container">
+    <section class="hero">
+      <div class="tag">Security Proof of Concept</div>
+      <h1 class="cursor">Subdomain Takeover PoC</h1>
+      <p class="subtitle">
+        Este subdomínio foi reivindicado para fins de validação controlada, demonstrando exposição a
+        <strong>subdomain takeover</strong> em ambiente autorizado.
+      </p>
+      <div class="meta">
+        <div class="chip">Status: Validado</div>
+        <div class="chip">Impacto: Controle de conteúdo</div>
+        <div class="chip">Uso: Evidência técnica</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer-note">
+    Authorized security assessment only
+  </div>
+
+  <script>
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    const letters = 'アァイィウヴエカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const fontSize = 16;
+    let columns = Math.floor(width / fontSize);
+    let drops = Array(columns).fill(1);
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      columns = Math.floor(width / fontSize);
+      drops = Array(columns).fill(1);
+    }
+
+    function draw() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = '#00ff66';
+      ctx.font = fontSize + 'px monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters[Math.floor(Math.random() * letters.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+
+        drops[i]++;
+      }
+    }
+
+    setInterval(draw, 42);
+    window.addEventListener('resize', resize);
+  </script>
+</body>
+</html>
